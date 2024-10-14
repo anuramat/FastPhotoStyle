@@ -353,46 +353,40 @@ def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
     input_ = torch.from_numpy(input_cpu).cuda()
     output_ = torch.from_numpy(output_cpu).cuda()
     _best_local_affine_kernel(
+        output_.data_ptr(),
+        input_.data_ptr(),
+        affine_model.data_ptr(),
+        np.int32(h),
+        np.int32(w),
+        np.float32(epsilon),
+        np.int32(radius),
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
-        args=[
-            output_.data_ptr(),
-            input_.data_ptr(),
-            affine_model.data_ptr(),
-            np.int32(h),
-            np.int32(w),
-            np.float32(epsilon),
-            np.int32(radius),
-        ],
         stream=s,
     )
 
     _bilateral_smooth_kernel(
+        affine_model.data_ptr(),
+        filtered_affine_model.data_ptr(),
+        input_.data_ptr(),
+        np.int32(h),
+        np.int32(w),
+        np.int32(f_r),
+        np.float32(sigma1),
+        np.float32(sigma2),
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
-        args=[
-            affine_model.data_ptr(),
-            filtered_affine_model.data_ptr(),
-            input_.data_ptr(),
-            np.int32(h),
-            np.int32(w),
-            np.int32(f_r),
-            np.float32(sigma1),
-            np.float32(sigma2),
-        ],
         stream=s,
     )
 
     _reconstruction_best_kernel(
+        input_.data_ptr(),
+        filtered_affine_model.data_ptr(),
+        filtered_best_output.data_ptr(),
+        np.int32(h),
+        np.int32(w),
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
-        args=[
-            input_.data_ptr(),
-            filtered_affine_model.data_ptr(),
-            filtered_best_output.data_ptr(),
-            np.int32(h),
-            np.int32(w),
-        ],
         stream=s,
     )
     numpy_filtered_best_output = filtered_best_output.cpu().numpy()
