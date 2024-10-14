@@ -324,23 +324,20 @@ src = '''
 import torch
 import numpy as np
 from PIL import Image
-from cupy.cuda import function
-from pynvrtc.compiler import Program
 from collections import namedtuple
+
+from pycuda.compiler import SourceModule
 
 
 def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
     # program = Program(src.encode('utf-8'), 'best_local_affine_kernel.cu'.encode('utf-8'))
     # ptx = program.compile(['-I/usr/local/cuda/include'.encode('utf-8')])
-    program = Program(src, 'best_local_affine_kernel.cu')
-    ptx = program.compile(['-I/usr/local/cuda/include'])
-    m = function.Module()
-    m.load(bytes(ptx.encode()))
+    mod = SourceModule(src)
 
-    _reconstruction_best_kernel = m.get_function('reconstruction_best_kernel')
-    _bilateral_smooth_kernel = m.get_function('bilateral_smooth_kernel')
-    _best_local_affine_kernel = m.get_function('best_local_affine_kernel')
-    Stream = namedtuple('Stream', ['ptr'])
+    _reconstruction_best_kernel = mod.get_function("reconstruction_best_kernel")
+    _bilateral_smooth_kernel = mod.get_function("bilateral_smooth_kernel")
+    _best_local_affine_kernel = mod.get_function("best_local_affine_kernel")
+    Stream = namedtuple("Stream", ["ptr"])
     s = Stream(ptr=torch.cuda.current_stream().cuda_stream)
 
     filter_radius = f_r
