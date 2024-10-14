@@ -4,7 +4,7 @@ Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses
 """
 
 src = """
-	#include "/usr/local/cuda/include/math_functions.h"
+	#include <math_functions.h>
 	#define TB 256
 	#define EPS 1e-7
 

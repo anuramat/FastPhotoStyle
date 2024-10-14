@@ -24,6 +24,12 @@
         };
       in {
         devShell = pkgs.mkShell {
+          # shellHook = ''
+          #   export CUDA_PATH=${pkgs.cudatoolkit}
+          #   export PATH=${pkgs.cudatoolkit}/bin:$PATH
+          #   export LD_LIBRARY_PATH=${pkgs.cudatoolkit}/bin64:$LD_LIBRARY_PATH
+          #   export C_INCLUDE_PATH=${pkgs.cudatoolkit}/include
+          # '';
           buildInputs = [
             (pkgs.python3.withPackages (python-pkgs:
               with python-pkgs; [
@@ -42,6 +48,7 @@
                 pytest
                 tensorboard
               ]))
+            pkgs.cudaPackages.cudatoolkit
           ];
         };
       }
