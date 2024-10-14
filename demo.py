@@ -10,6 +10,9 @@ import argparse
 import torch
 import process_stylization
 from photo_wct import PhotoWCT
+from pycuda import autoinit
+
+ctx = autoinit.make_default_context()
 
 # images in .png, seg in .pgm
 parser = argparse.ArgumentParser(description="Photorealistic Image Stylization")
@@ -52,3 +55,5 @@ process_stylization.stylization(
     save_intermediate=args.save_intermediate,
     no_post=args.no_post,
 )
+
+ctx.pop()
