@@ -322,12 +322,11 @@ src = """
 	}
 	"""
 
-import torch
 import numpy as np
 from PIL import Image
-from collections import namedtuple
 
 from pycuda.compiler import SourceModule
+import pycuda.driver as drv
 
 
 def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
@@ -338,37 +337,35 @@ def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
     _reconstruction_best_kernel = mod.get_function("reconstruction_best_kernel")
     _bilateral_smooth_kernel = mod.get_function("bilateral_smooth_kernel")
     _best_local_affine_kernel = mod.get_function("best_local_affine_kernel")
-    Stream = namedtuple("Stream", ["ptr"])
-    s = Stream(ptr=torch.cuda.current_stream().cuda_stream)
 
     filter_radius = f_r
     sigma1 = filter_radius / 3
     sigma2 = f_e
     radius = (patch - 1) / 2
 
-    filtered_best_output = torch.zeros(np.shape(input_cpu)).cuda()
-    affine_model = torch.zeros((h * w, 12)).cuda()
-    filtered_affine_model = torch.zeros((h * w, 12)).cuda()
+    filtered_best_output = np.zeros(np.shape(input_cpu), dtype=np.float32)
+    affine_model = np.zeros((h * w, 12), dtype=np.float32)
+    filtered_affine_model = np.zeros((h * w, 12), dtype=np.float32)
 
-    input_ = torch.from_numpy(input_cpu).cuda()
-    output_ = torch.from_numpy(output_cpu).cuda()
+    input_ = np.array(input_cpu, dtype=np.float32)
+    output_ = np.array(output_cpu, dtype=np.float32)
+
     _best_local_affine_kernel(
-        output_.data_ptr(),
-        input_.data_ptr(),
-        affine_model.data_ptr(),
+        drv.InOut(output_),
+        drv.InOut(input_),
+        drv.InOut(affine_model),
         np.int32(h),
         np.int32(w),
         np.float32(epsilon),
         np.int32(radius),
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
-        stream=s,
     )
 
     _bilateral_smooth_kernel(
-        affine_model.data_ptr(),
-        filtered_affine_model.data_ptr(),
-        input_.data_ptr(),
+        drv.InOut(affine_model),
+        drv.InOut(filtered_affine_model),
+        drv.InOut(input_),
         np.int32(h),
         np.int32(w),
         np.int32(f_r),
@@ -376,21 +373,19 @@ def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
         np.float32(sigma2),
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
-        stream=s,
     )
 
     _reconstruction_best_kernel(
-        input_.data_ptr(),
-        filtered_affine_model.data_ptr(),
-        filtered_best_output.data_ptr(),
+        drv.InOut(input_),
+        drv.InOut(filtered_affine_model),
+        drv.InOut(filtered_best_output),
         np.int32(h),
         np.int32(w),
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
-        stream=s,
     )
-    numpy_filtered_best_output = filtered_best_output.cpu().numpy()
-    return numpy_filtered_best_output
+
+    return filtered_best_output
 
 
 def smooth_filter(initImg, contentImg, f_radius=15, f_edge=1e-1):
