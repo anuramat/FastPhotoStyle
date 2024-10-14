@@ -9,13 +9,14 @@ import torch
 import process_stylization
 from photo_wct import PhotoWCT
 
+# images in .png, seg in .pgm
 parser = argparse.ArgumentParser(description="Photorealistic Image Stylization")
 parser.add_argument("--model", default="./PhotoWCTModels/photo_wct.pth")
-parser.add_argument("--content_image_path", default="./images/content1.png")
+parser.add_argument("--content_image_path", required=True)
 parser.add_argument("--content_seg_path", default=[])
-parser.add_argument("--style_image_path", default="./images/style1.png")
+parser.add_argument("--style_image_path", required=True)
 parser.add_argument("--style_seg_path", default=[])
-parser.add_argument("--output_image_path", default="./results/example1.png")
+parser.add_argument("--output_image_path", required=True)
 parser.add_argument("--save_intermediate", action="store_true", default=False)
 parser.add_argument("--fast", action="store_true", default=False)
 parser.add_argument("--no_post", action="store_true", default=False)

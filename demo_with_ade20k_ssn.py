@@ -74,11 +74,12 @@ parser.add_argument(
     default="./PhotoWCTModels/photo_wct.pth",
     help="Path to the PhotoWCT model. These are provided by the PhotoWCT submodule, please use `git submodule update --init --recursive` to pull.",
 )
-parser.add_argument("--content_image_path", default="./images/content3.png")
-parser.add_argument("--content_seg_path", default="./results/content3_seg.pgm")
-parser.add_argument("--style_image_path", default="./images/style3.png")
-parser.add_argument("--style_seg_path", default="./results/style3_seg.pgm")
-parser.add_argument("--output_image_path", default="./results/example3.png")
+# images in .png, seg in .pgm
+parser.add_argument("--content_image_path", required=True)
+parser.add_argument("--content_seg_path", required=True)
+parser.add_argument("--style_image_path", required=True)
+parser.add_argument("--style_seg_path", required=True)
+parser.add_argument("--output_image_path", required=True)
 parser.add_argument("--save_intermediate", action="store_true", default=False)
 parser.add_argument("--fast", action="store_true", default=False)
 parser.add_argument("--no_post", action="store_true", default=False)
